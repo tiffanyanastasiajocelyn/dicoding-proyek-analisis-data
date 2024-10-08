@@ -1,56 +1,45 @@
-import streamlit as st
 import pandas as pd
-import matplotlib as plt
+import streamlit as st
+import matplotlib.pyplot as plt
 import seaborn as sns
-import os
 
-# Ubah direktori kerja
-os.chdir('C:/Users/User/Downloads')
+# Set the path for the dataset (gunakan jalur absolut)
+DATA_PATH = "C:\\Users\\User\\Downloads\\gabungan.csv"
+
+# Load the dataset
+data = pd.read_csv(DATA_PATH)
 
 # Set the title of the dashboard
-st.title("Dashboard Analisis Data Kualitas Udara")
-
-# Load the data
-data = pd.read_csv('gabungan.csv')
-
-# Filter data for the required questions
-data['date'] = pd.to_datetime(data[['year', 'month', 'day']])
-data_guanyuan = data[['date', 'PM2.5_guanyuan', 'PM10_guanyuan']].set_index('date')
-data_gucheng = data[['date', 'PM2.5_gucheng', 'PM10_gucheng']].set_index('date')
+st.title("Dashboard Analisis Data Kualitas Udara dan Curah Hujan")
 
 # Pertanyaan 1
-st.markdown("### Pertanyaan 1: Bagaimana perbedaan rata-rata konsentrasi PM2.5 dan PM10 antara stasiun Guanyuan dan Gucheng selama periode 2013 hingga 2017?")
-average_pm25_guanyuan = data_guanyuan['PM2.5_guanyuan'].mean()
-average_pm10_guanyuan = data_guanyuan['PM10_guanyuan'].mean()
-average_pm25_gucheng = data_gucheng['PM2.5_gucheng'].mean()
-average_pm10_gucheng = data_gucheng['PM10_gucheng'].mean()
+st.markdown("## Pertanyaan 1: Bagaimana perbedaan rata-rata konsentrasi PM2.5 dan PM10 antara stasiun Guanyuan dan Gucheng selama periode 2013 hingga 2017?")
 
-# Create a bar chart for average PM2.5 and PM10
-labels = ['Guanyuan PM2.5', 'Guanyuan PM10', 'Gucheng PM2.5', 'Gucheng PM10']
-values = [average_pm25_guanyuan, average_pm10_guanyuan, average_pm25_gucheng, average_pm10_gucheng]
+# Filter data untuk tahun 2013 hingga 2017
+filtered_data_1 = data[(data['year'] >= 2013) & (data['year'] <= 2017)]
+mean_pm = filtered_data_1[['PM2.5_guanyuan', 'PM10_guanyuan', 'PM2.5_gucheng', 'PM10_gucheng']].mean()
 
-fig1, ax1 = plt.subplots()
-ax1.bar(labels, values, color=['blue', 'blue', 'orange', 'orange'])
-ax1.set_ylabel('Rata-rata Konsentrasi (µg/m³)')
-ax1.set_title('Rata-rata Konsentrasi PM2.5 dan PM10')
-
-# Display the chart in the Streamlit app
-st.pyplot(fig1)
+# Visualisasi
+plt.figure(figsize=(10, 5))
+sns.barplot(x=mean_pm.index, y=mean_pm.values)
+plt.title('Rata-rata Konsentrasi PM2.5 dan PM10 (2013-2017)')
+plt.ylabel('Konsentrasi (µg/m³)')
+plt.xticks(rotation=45)
+st.pyplot(plt)
 
 # Pertanyaan 2
-st.markdown("### Pertanyaan 2: Apakah ada perbedaan signifikan dalam curah hujan (RAIN) bulanan antara stasiun Guanyuan dan Gucheng selama periode 2015?")
-rain_guanyuan = data[data['year'] == 2015].groupby('month')['RAIN_guanyuan'].mean()
-rain_gucheng = data[data['year'] == 2015].groupby('month')['RAIN_gucheng'].mean()
+st.markdown("## Pertanyaan 2: Apakah ada perbedaan signifikan dalam curah hujan (RAIN) bulanan antara stasiun Guanyuan dan Gucheng selama periode 2015?")
 
-# Create a line plot for monthly rain
+# Filter data untuk tahun 2015
+filtered_data_2 = data[data['year'] == 2015]
+rain_monthly = filtered_data_2.groupby('month')[['RAIN_guanyuan', 'RAIN_gucheng']].mean().reset_index()
+
+# Visualisasi
 plt.figure(figsize=(10, 5))
-plt.plot(rain_guanyuan.index, rain_guanyuan.values, label='Guanyuan', marker='o')
-plt.plot(rain_gucheng.index, rain_gucheng.values, label='Gucheng', marker='o')
-plt.title('Curah Hujan Bulanan 2015')
-plt.xlabel('Bulan')
+sns.lineplot(data=rain_monthly, x='month', y='RAIN_guanyuan', label='Guanyuan', marker='o')
+sns.lineplot(data=rain_monthly, x='month', y='RAIN_gucheng', label='Gucheng', marker='o')
+plt.title('Curah Hujan Bulanan (2015)')
 plt.ylabel('Curah Hujan (mm)')
-plt.xticks(rain_guanyuan.index)
-plt.legend()
-
-# Display the chart in the Streamlit app
-st.pyplot(plt.gcf())
+plt.xlabel('Bulan')
+plt.xticks(ticks=range(1, 13), labels=['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+st.pyplot(plt)
